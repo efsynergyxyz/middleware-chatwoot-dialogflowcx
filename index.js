@@ -28,6 +28,12 @@ app.post('/webhook/chatwoot', async (req, res) => {
       req.body.conversation_id ||
       "anon";
 
+    // 🔹 Log de debugging
+    console.log("ENV:", {
+      GC_PROJECT: process.env.GC_PROJECT,
+      GC_LOCATION: process.env.GC_LOCATION,
+      GC_AGENT: process.env.GC_AGENT
+    });
     console.log("Body completo Chatwoot:", JSON.stringify(req.body, null, 2));
     console.log("Mensaje parseado:", message);
     console.log("Sender ID:", senderId);
@@ -39,9 +45,11 @@ app.post('/webhook/chatwoot', async (req, res) => {
 
     const url = `https://dialogflow.googleapis.com/v3/projects/${process.env.GC_PROJECT}/locations/${process.env.GC_LOCATION}/agents/${process.env.GC_AGENT}/sessions/${senderId}:detectIntent`;
 
+    // 🔹 OAuth automático
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
 
+    // 🔹 Llamada a Dialogflow CX
     const response = await axios.post(
       url,
       {
@@ -61,7 +69,6 @@ app.post('/webhook/chatwoot', async (req, res) => {
     const messages = response.data.queryResult?.responseMessages || [];
 
     let replyText = "No entendí 😅";
-
     for (const m of messages) {
       if (m.text?.text?.length) {
         replyText = m.text.text[0];
@@ -74,7 +81,8 @@ app.post('/webhook/chatwoot', async (req, res) => {
     res.json({ content: replyText });
 
   } catch (err) {
-    console.error("Error completo:", err?.response?.data || err.stack || err.message);
+    // 🔹 Log completo de errores para debugging
+    console.error("ERROR FULL:", err?.response?.data || err.stack || err);
     res.status(500).json({ content: "Error interno 😵" });
   }
 });
